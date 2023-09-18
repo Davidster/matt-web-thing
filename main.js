@@ -52,45 +52,6 @@ function parseDb() {
   });
 }
 
-// function parseDb() {
-//   let lines = db.trim().split("\n");
-
-//   let columnLabelsLine = lines.shift();
-//   let columnsLabels = columnLabelsLine.split(",");
-
-//   let columnInfoMap = {};
-//   // columns.forEach((columnLabel) => {
-//   //   columnInfoMap[columnLabel] = {
-//   //     label: columnLabel
-//   //   };
-//   // });
-
-//   lines.forEach((line) => {
-//     let cells = line.split(",");
-
-//     let process = cells.shift();
-    
-//     cells.forEach((cell, i) => {
-//       let cellValue = cell.trim();
-//       if (cellValue === "") {
-//         return;
-//       }
-
-//       let columnLabel = columnsLabels[i + 1];
-//       let columnId = `${process}_${columnLabel}`;
-
-//       if (!columnInfoMap[columnId]) {
-//         columnInfoMap[columnId] = {
-//           process,
-//           columnLabel,
-//         };
-//       }
-      
-//       let 
-//     });
-//   });
-// }
-
 function getPossibleRows() {
   return parsedRows.filter((row) => {
     return Object.keys(userSelections).every((selectedColumn) => {
@@ -142,13 +103,6 @@ function refreshForm() {
 
   // TODO: can we be smarter about presenting these in chunks?
   nextColumns = nextColumns.slice(0, 1);
-
-  // let nextColumns = possibleNextColumns.filter((column) => {
-  //   let columnIndex = parsedColumns.indexOf(column);
-  //   return possibleRows.every((row) => typeof row[columnIndex] !== "undefined");
-  // });
-
-  // console.log({ nextColumns });
 
   let columnInputs = {};
 
@@ -230,13 +184,6 @@ function refreshForm() {
           return rowObj;
         }), null, 2));
         mainElement.append(results);
-
-        // possibleRows.forEach((row) => {
-        //   let rowElement = document.createElement("div");
-        //   // rowElement.append(row.filter((col) => col !== undefined).join(" "));
-        //   rowElement.append(JSON.stringify());
-        //   mainElement.append(rowElement);
-        // });
       }
     }
   });
@@ -245,63 +192,6 @@ function refreshForm() {
 
   return true;
 }
-
-function createInitialForm() {
-  let mainElement = document.getElementById("main");
-
-  // add welcome message
-  {
-    let welcomeElement = document.createElement("div");
-    welcomeElement.append("Welcome");
-    mainElement.append(welcomeElement);
-  }
-
-  // add process dropdown
-  {
-    let label = document.createElement("div");
-    label.append("Process");
-
-    initialDropdownElement = document.createElement("select");
-
-    // option 1
-    let conveyorOption = document.createElement("option");
-    conveyorOption.setAttribute("value", "Conveyor");
-    conveyorOption.append("Conveyor");
-    initialDropdownElement.append(conveyorOption);
-
-    // option 2
-    let mixerOption = document.createElement("option");
-    mixerOption.setAttribute("value", "Mixer");
-    mixerOption.append("Mixer");
-    initialDropdownElement.append(mixerOption);
-
-    mainElement.append(initialDropdownElement);
-  }
-
-  // add submit button
-  {
-    let submitButton = document.createElement("button");
-    submitButton.append("Next");
-
-    submitButton.addEventListener("click", () => { 
-      let selectedValue = initialDropdownElement.value;
-
-      if (selectedValue === "Conveyor") {
-        createConveyorForm();
-      } else if (selectedValue === "Mixer") {
-        createMixerForm();
-      }
-    });
-
-    mainElement.append(submitButton);
-  }
-}
-
-// db = `
-// Product Name,Process,Transfer Type,Roller Material,Wheel Type,Length,Width,Height
-// A1,Conveyor,motorized,Aluminum,,10,16,3
-// A2,Conveyor,,,Caster,,,
-// `;
 
 db = `
 Process,Product Name,Conveyor Type,Transfer Type,Roller Material,Wheel Type,Length (M),Width (M),Height (M),Mixer Type,Viscosity,Material,RPM,Material Type
@@ -317,12 +207,3 @@ Mixer,B4 (Mixer Impeller),,,,,,,,Impeller,Low (0-50),Plastic,,
 
 parseDb();
 refreshForm();
-// createInitialForm();
-
-// function createConveyorForm() {
-//   let 
-// }
-
-// function createMixerForm() {
-
-// }
