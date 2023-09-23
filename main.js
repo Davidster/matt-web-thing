@@ -4,7 +4,9 @@ let parsedColumnTypes = [];
 let parsedColumns = [];
 let parsedRows = [];
 let unselectableColumns = ["Product Name", "Price"];
-let userSelections = {};
+let oneOfEachColumns = ["Conveyor Component"];
+let mainFormElement = document.getElementById("main");
+// let userSelections = {};
 
 function getCellValue(cellString) {
   let value = cellString.trim();
@@ -19,6 +21,15 @@ function getCellValue(cellString) {
   }
 
   return value;
+}
+
+/**
+ * 
+ * @param {string} columnName 
+ * @returns bool
+ */
+function isOneOfEach(columnName) {
+  return oneOfEachColumns.includes(columnName);
 }
 
 function parseDb() {
@@ -52,7 +63,7 @@ function parseDb() {
   });
 }
 
-function getPossibleRows() {
+function getPossibleRows(userSelections) {
   return parsedRows.filter((row) => {
     return Object.keys(userSelections).every((selectedColumn) => {
       let columnIndex = parsedColumns.indexOf(selectedColumn);
@@ -67,18 +78,18 @@ function getPossibleRows() {
   });
 }
 
-function refreshForm() {
-  let mainElement = document.getElementById("main");
+function refreshForm(userSelections, subform) {
+  let formElement = subform ? subform : mainFormElement;
   // mainElement.innerHTML = "";
 
-  let possibleNextColumns = parsedColumns
+  let possibleRemainingColumns = parsedColumns
     .filter((column) => !unselectableColumns.includes(column))
     .filter((column) => !userSelections[column]);
 
-  let possibleRows = getPossibleRows();
+  let possibleRows = getPossibleRows(userSelections);
 
-  let nextColumns = [];
-  possibleNextColumns.forEach((column) => {
+  let remainingColumns = [];
+  possibleRemainingColumns.forEach((column) => {
     let columnIndex = parsedColumns.indexOf(column);
     let values = [];
     possibleRows.forEach((row) => {
@@ -89,20 +100,45 @@ function refreshForm() {
     });
 
     if (values.length === possibleRows.length) {
-      nextColumns.push({
+      remainingColumns.push({
         column,
         values: Array.from(new Set(values)),
       });
     }
   });
 
-  if (nextColumns.length === 0) {
+  if (remainingColumns.length === 0) {
     console.log("no more fields to ask for");
     return false;
   }
 
-  // TODO: can we be smarter about presenting these in chunks?
-  nextColumns = nextColumns.slice(0, 1);
+  let nextColumns = remainingColumns.slice(0, 1);
+  let nextColumn = remainingColumns[0];
+
+  if (isOneOfEach(nextColumn.column)) {
+    let subforms = document.createElement("div");
+    subforms.className = "subforms";
+    mainFormElement.append(subforms);
+    nextColumn.values.forEach((value) => {
+      let subformContainer = document.createElement("div");
+      subformContainer.className = "subformContainer";
+      let label = document.createElement("div");
+      label.append(value);
+      subformContainer.append(label);
+
+      let subform = document.createElement("div");
+      subformContainer.append(subform);
+
+      subforms.append(subformContainer);
+
+      let newUserSelections = {
+        ...userSelections,
+        [nextColumn.column]: value,
+      };
+      refreshForm(newUserSelections, subform);
+    });
+    return true;
+  }
 
   let columnInputs = {};
 
@@ -115,7 +151,7 @@ function refreshForm() {
 
     let label = document.createElement("div");
     label.append(column);
-    mainElement.append(label);
+    formElement.append(label);
 
     if (columnType === "string") {
       let select = document.createElement("select");
@@ -127,19 +163,19 @@ function refreshForm() {
         select.append(option);
       });
 
-      mainElement.append(select);
+      formElement.append(select);
       columnInputs[column] = select;
     } else if (columnType === "number") {
       let input = document.createElement("input");
       input.setAttribute("type", "number");
-      mainElement.append(input);
+      formElement.append(input);
       columnInputs[column] = input;
     } else {
       console.error(`Unable to build UI for unexpected column type ${columnType} for column '${column}'`);
     }
   });
 
-  mainElement.append(document.createElement("br"));
+  formElement.append(document.createElement("br"));
 
   let submitButton = document.createElement("button");
   submitButton.append("Next"); // TODO: change to 'success' when next step is done
@@ -164,13 +200,13 @@ function refreshForm() {
 
     if (valid) {
       console.log({ userSelections });
-      let hasMoreInputsToFill = refreshForm();
+      let hasMoreInputsToFill = refreshForm(userSelections, subform);
       if (!hasMoreInputsToFill) {
         let label = document.createElement("div");
         label.append("Results:");
-        mainElement.append(label);
+        formElement.append(label);
 
-        let possibleRows = getPossibleRows();
+        let possibleRows = getPossibleRows(userSelections);
 
         let results = document.createElement("pre");
         results.append(JSON.stringify(possibleRows.map((row) => {
@@ -183,18 +219,18 @@ function refreshForm() {
           });
           return rowObj;
         }), null, 2));
-        mainElement.append(results);
+        formElement.append(results);
       }
     }
   });
 
-  mainElement.append(submitButton);
+  formElement.append(submitButton);
 
   return true;
 }
 
 db = `
-Process,Product Name,Conveyor Type,Transfer Type,Roller Material,Wheel Type,Length (M),Width (M),Height (M),Mixer Type,Viscosity,Material,RPM,Material Type
+Process,Product Name,Conveyor Component,Transfer Type,Roller Material,Wheel Type,Length (M),Width (M),Height (M),Mixer Type,Viscosity,Material,RPM,Material Type
 Conveyor,A1 (Conveyor Unit),Unit,motorized,Aluminum,,10,16,3,,,,,
 Conveyor,A2 (Conveyor Unit),Unit,Gravity,Stainless Steel,,5-10,2-3,1,,,,,
 Conveyor,A3 (Conveyor Wheels),Wheels,,,Caster,,,,,,,,
@@ -206,4 +242,4 @@ Mixer,B4 (Mixer Impeller),,,,,,,,Impeller,Low (0-50),Plastic,,
 `;
 
 parseDb();
-refreshForm();
+refreshForm({});
